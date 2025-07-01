@@ -10,8 +10,8 @@ return (
 	<main>
 		<Header />
 		<Home />
-		<Footer />
 	</main>
+		<Footer />
 </div>
   )}
 
