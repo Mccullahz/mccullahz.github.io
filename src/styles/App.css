@@ -1,0 +1,38 @@
+/*---------
+ Global Vars
+ * ---------*/
+:root {
+  --color-dark: #1f1f1f;
+  --color-light: #adadad;
+  --color-gray: #262626;
+  --color-theme: #4e008a;
+  --radius: 10px;
+  --transition: 0.25s ease;
+  --font-heading: 'Poppins', sans-serif;
+  --font-body: 'Mulish', sans-serif;
+}
+/*---------
+ Global Styles
+ * ---------*/
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  color: var(--color-light);
+  background-color: var(--color-dark);
+}
+
+/*---------
+ Header Styles
+ * ---------*/
+.App-header {
+  display: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: var(--radius);
+}
+
+
+
+
