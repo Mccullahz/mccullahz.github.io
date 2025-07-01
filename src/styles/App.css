@@ -2,7 +2,7 @@
  Global Vars
  * ---------*/
 :root {
-  --color-dark: #1f1f1f;
+  --color-dark: #0f1318;
   --color-light: #adadad;
   --color-gray: #262626;
   --color-theme: #4e008a;
@@ -15,7 +15,7 @@
  Global Styles
  * ---------*/
 body {
-  margin: 0;
+  margin: 10vh;
   padding: 0;
   font-family: var(--font-body);
   color: var(--color-light);
@@ -26,10 +26,10 @@ body {
  Header Styles
  * ---------*/
 .App-header {
-  display: column;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
   border-radius: var(--radius);
 }
 
