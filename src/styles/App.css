@@ -2,9 +2,9 @@
  Global Vars
  * ---------*/
 :root {
-  --color-dark: #0f1318;
-  --color-light: #adadad;
-  --color-gray: #262626;
+  --color-dark: #070b11;
+  --color-light: #bfc5cc;
+  --color-gray: #11151c;
   --color-theme: #4e008a;
   --radius: 10px;
   --transition: 0.25s ease;
@@ -19,18 +19,50 @@ body {
   padding: 0;
   font-family: var(--font-body);
   color: var(--color-light);
-  background-color: var(--color-dark);
+  background-color: var(--color-gray);
 }
 
 /*---------
- Header Styles
+ Nav Styles
  * ---------*/
-.App-header {
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 56px;
+  background-color: var(--color-dark);
+  color: var(--color-light);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  border-radius: var(--radius);
+  padding: 0 1.5rem;
+  box-shadow: 0 1px 0 var(--color-gray);
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-right: 1.5rem;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.navbar-link {
+  color: var(--color-light);
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.navbar-link:hover {
+  background-color: var(--color-theme);
 }
 
 
