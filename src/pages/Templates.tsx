@@ -1,20 +1,10 @@
 import React from "react";
 import { ArticleHelper } from "../components/ArticleHelper";
+import { contentRegistry } from "../data/ContentReg";
 import "../styles/App.css";
 
 export default function Templates() {
-  const templates = [
-    {
-      title: "Statement of Work - SOW Template",
-      subtitle: "A straight forward template used to help organize projects as a solo dev.",
-      technologies: ["Markdown", "PDF Download"],
-      links: {
-        github: "No Links Here :)",
-      },
-      slug: "SOW Template",
-    },
-
-  ];
+  const templates = contentRegistry.filter((item) => item.type === "template");
 
   return (
     <main className="projects-page">
@@ -26,7 +16,7 @@ export default function Templates() {
             subtitle={tmpl.subtitle}
             technologies={tmpl.technologies}
             links={tmpl.links}
-	    slug={tmpl.slug}
+            slug={tmpl.slug}
           />
         </div>
       ))}
