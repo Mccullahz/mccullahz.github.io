@@ -12,15 +12,23 @@
   --font-body: 'Mulish', sans-serif;
 }
 /*---------
- Global Styles
+ Global Body Styles
  * ---------*/
 body {
   margin: 10vh;
+  height: 100%;
   padding: 0;
   font-family: var(--font-body);
   color: var(--color-light);
   background-color: var(--color-gray);
 }
+
+.App {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 
 /*---------
  Nav Styles
@@ -50,6 +58,7 @@ body {
 
 .navbar-links {
   display: flex;
+  flex-direction: row;
   gap: 1rem;
 }
 
@@ -67,4 +76,39 @@ body {
 
 
 
+/*---------
+ Footer Styles
+ * ---------*/
+.footer {
+  margin-top: 35%;
+  width: 100%;
+  padding: 1rem 0;
+  text-align: center;
+  background-color: var(--color-grey);
+  position: realtive;
+}
 
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Social icon list */
+.social-list {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-link {
+  font-size: 1.75rem;
+  color: var(--color-light);
+  transition: color 0.3s ease;
+}
+
+.social-link:hover {
+  color: var(--color-theme);
+}

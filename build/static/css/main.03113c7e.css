@@ -1,2 +1,0 @@
-:root{--color-dark:#1f1f1f;--color-light:#adadad;--color-gray:#262626;--color-theme:#4e008a;--radius:10px;--transition:0.25s ease;--font-heading:"Poppins",sans-serif;--font-body:"Mulish",sans-serif}body{background-color:#1f1f1f;background-color:var(--color-dark);color:#adadad;color:var(--color-light);font-family:Mulish,sans-serif;font-family:var(--font-body);margin:0;padding:0}.App-header{align-items:center;border-radius:10px;border-radius:var(--radius);display:column;justify-content:space-between;padding:1rem}
-/*# sourceMappingURL=main.03113c7e.css.map*/

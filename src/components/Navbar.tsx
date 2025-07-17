@@ -10,8 +10,8 @@ export default function Navbar() {
         <span style={{ marginLeft: "0.5rem" }}>Mccullahz / DevLog</span>
       </div>
       <div className="navbar-links">
-        <a className="navbar-link" href="#">1</a>
-        <a className="navbar-link" href="#">2</a>
+        <a className="navbar-link" href="#Home">Overview</a>
+        <a className="navbar-link" href="#Projects">Projects</a>
         <a className="navbar-link" href="#">3</a>
         <a className="navbar-link" href="#">4</a>
         <a className="navbar-link" href="#">5</a>
