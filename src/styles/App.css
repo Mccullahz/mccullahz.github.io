@@ -11,8 +11,9 @@
   --font-heading: 'Poppins', sans-serif;
   --font-body: 'Mulish', sans-serif;
 }
+
 /*---------
- Global Body Styles
+Body Styles
  * ---------*/
 body {
   margin: 10vh;
@@ -29,6 +30,62 @@ body {
   flex-direction: column;
 }
 
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 1100px;
+  margin: 4rem auto;
+  gap: 2rem;
+  padding: 0 1rem;
+}
+
+.hero-cards {
+  margin-top: 2rem;
+  flex: 1 1 35%;
+  flex-direction: column;
+  min-width: 280px;
+  align-items: center;
+}
+
+.avatar {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  border: 2px solid #30363d;
+}
+
+.info-cards {
+  flex: 1 1 60%;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.card {
+  background-color: var(--color-gray);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 0 transparent;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.card h1, h2 {
+  color: var(--color-theme);
+  margin-bottom: 1rem;
+}
+
+.card p {
+  color: var(--color-light);
+  line-height: 1.6;
+}
 
 /*---------
  Nav Styles
@@ -121,17 +178,16 @@ body {
   text-decoration: underline;
 }
 
-
 /*---------
  Footer Styles
  * ---------*/
 .footer {
-  margin-top: 35%;
+  margin-top: auto;
   width: 100%;
   padding: 1rem 0;
   text-align: center;
   background-color: var(--color-grey);
-  position: realtive;
+  position: relative;
 }
 
 .container {

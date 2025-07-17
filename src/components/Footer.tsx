@@ -1,17 +1,29 @@
 import '../styles/App.css';
 import React from "react";
-import { IoLogoLinkedin, IoLogoGithub } from "react-icons/io5";
+import { IoLogoLinkedin, IoLogoGithub, IoGlobeOutline } from "react-icons/io5";
 
 export default function Footer() {
 
 	const LinkedInIcon = IoLogoLinkedin as unknown as React.FC;
 	const GitHubIcon = IoLogoGithub as unknown as React.FC;
+	const WorldIcon = IoGlobeOutline as unknown as React.FC;
 
 
 	 return (
     <footer className="footer">
       <div className="container">
 	<ul className="social-list">
+	  <li>
+	    <a
+	      href="https://zylarmccullah.tech"
+	      className="social-link"
+	      target="_blank"
+	      rel="noopener noreferrer"
+	      >
+	      <WorldIcon aria-hidden="true" />
+	    </a>
+	  </li>
+
 	  <li>
 	    <a
 	      href="https://www.linkedin.com/in/zylar-mccullah-b4654420a/"
@@ -22,6 +34,7 @@ export default function Footer() {
 	      <LinkedInIcon aria-hidden="true" />
 	    </a>
 	  </li>
+
 	  <li>
 	    <a
 	      href="https://github.com/Mccullahz"
