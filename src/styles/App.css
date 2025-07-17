@@ -74,6 +74,52 @@ body {
   background-color: var(--color-theme);
 }
 
+/*---------
+ Project Page Styles
+ * ---------*/
+.projects-page {
+  padding: 2rem;
+  max-width: 900px;
+  margin: auto;
+  background-color: var(--color-grey);
+  color: var(--color-light);
+}
+
+.project-entry {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1.5rem;
+}
+
+.article-title {
+  font-size: 1.5rem;
+  color: var(--color-theme);
+}
+
+.article-subtitle {
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  color: var(--color-light);
+}
+
+.article-technologies {
+  font-style: italic;
+  color: var(--color-light);
+}
+
+.article-link-wrapper {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.article-links a {
+  color: var(--color-theme);
+  text-decoration: none;
+}
+
+.article-links a:hover {
+  text-decoration: underline;
+}
 
 
 /*---------
