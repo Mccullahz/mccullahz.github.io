@@ -22,7 +22,6 @@ export const contentRegistry: ContentItem[] = [
  *  	technologies: is an array of strings representing the technologies used, displayed on the card
  *  	links: is an object containing optional links, shown on the card only
  *  	content: is the main content of the item, displayed on the page, rendered as markdown, use \`\`\`markdown to showcase markdown without formatting
- *
  * */
 
     type: "template",
@@ -128,7 +127,8 @@ This project will be considered complete when:
 1. [Overview](#overview)
 2. [Structure](#structure)
 3. [Terminal Interface](#TUI)
-4. [Scraping](#scraping)
+4. [Geo](#geo)
+5. [Scraping](#scraping)
 	1. [Concurrency](#concurrency)
 
 
@@ -145,6 +145,8 @@ TUI interface is inside the ui package, the 'scraper' that handles HTTP requests
 ## Terminal Interface
 The TUI is built using the Bubbletea library, which provides a simple and effective way to create terminal user interfaces in Go, and styled with the Lipgloss addition to Bubbletea. The interface allows users to input a ZIP code, select a radius for scraping, and view the results in a structured format. The UI is designed to be intuitive and responsive, and will eventually be able to provide real time feedback as the scraper processes each website.
 
+## Geo
+The 'Geo' package is responsible for the handling of gepgraphic data, such as ZIP codes and their associated locations. The current idea is to use the 
 
 ## Scraping
 The scraping functionality is implemented using Go's 'net/http' package to make HTTP requests and 'goquery' for parsing HTML. The scraper first locates all pages attached to a zipcode via our Geo Package, then parses every page within the radius. We are then parsing the HTML to find links that match common job listing patterns, such as "careers", "jobs", or "employment".
