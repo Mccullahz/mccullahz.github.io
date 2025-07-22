@@ -1,6 +1,7 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import remarkSlug from "remark-slug";
 import { contentRegistry } from "../data/ContentReg";
 
 export default function ArticleView() {
@@ -15,8 +16,10 @@ export default function ArticleView() {
   return (
     <main style={{ padding: "2rem", maxWidth: "700px", margin: "0 auto" }}>
       <h1>{article.title}</h1>
-      <ReactMarkdown>{article.content}</ReactMarkdown>
+      <ReactMarkdown>
+      {/*need remarkSlug here for TOC to work properly*/}
+        {article.content}
+      </ReactMarkdown>
     </main>
   );
 }
-

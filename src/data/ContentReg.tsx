@@ -14,7 +14,8 @@ export type ContentItem = {
 
 export const contentRegistry: ContentItem[] = [
   {
-/*	This setup is pretty straight forward, but
+/*
+ * 	This setup is pretty straight forward, but
  * 	type: is used to differentiate between templates and projects, this changes what page the content is displayed on
  *  	slug: is used to create the URL for the page, so it should be unique and descriptive for each item
  *  	title: is the main title of the content item, displayed prominently on the card and the page
@@ -112,7 +113,46 @@ This project will be considered complete when:
     `,
   },
 
+  {
+    type: "template",
+    slug: "cover-letter-template",
+    title: "Cover Letter Template",
+    subtitle: "A simple, reuable Markdown cover letter template for applications that accept text based CVs.",
+    technologies: ["Markdown", "PDF Download"],
+    links: {
+      github: "Templates don't need links siily!",
+    },
+    content: `
 
+This template serves as a straight forward reusable cover letter for job applications that accept text based CVs. It is designed to be easily customizable and reusable for various job applications. If I feel fancy I will also add a PDF / DOC download option in the near future.
+
+Zylar McCullah
+
+Location: Loveland, OH,
+Email: zylardmccullah@gmail.com,	
+Phone: (937)-205-2799,
+Website: https://zylarmccullah.tech
+
+[DATE]
+
+[COMPANY]
+
+Dear Hiring Manager(s),
+
+I am very interested in the [JOB TITLE] position as advertised on [BOARD]. With a strong foundation in backend development, systems programming, and automation as well as hands on experience building full-stack projects using [REL TECH], I am excited by the opportunity to contribute to a team focused on innovation and excellence.
+
+In my most recent role at Firewatch Design Studio, I led the development of a computer vision application using Python primarily within the Panda3D rendering library. Here I also collaborated cross functionally with the C-Suite to deliver production grade features for real time animation. Prior to that, I supported enterprise grade environments at Forward Edge Inc., managing thousands of user devices and accounts, and building internal tools like FTP servers and VPN systems to streamline IT workflows.
+
+Beyond work, I’ve built several projects for my university courses in Java / C++ / Go, finding a love for building with Go / Python + Typescript / React. I bring a practical mindset, a bias toward clean and scalable architecture, and an enthusiasm for system level thinking.
+I’m confident my experience with a variety of technologies, from development / scripting to containerization and DevOps (CI/CD, Docker), aligns with the challenges and goals of [COMPANY]. I’m excited to grow alongside a collaborative and technically curious team.
+Thank you for considering my application, if there is anything at all that I can provide to further this evaluation do not hesitate to reach out!
+
+Sincerely,
+
+Zylar McCullah
+
+    `,
+  },
   {
     type: "project",
     slug: "job-scraper-cli",
@@ -128,8 +168,11 @@ This project will be considered complete when:
 2. [Structure](#structure)
 3. [Terminal Interface](#TUI)
 4. [Geo](#geo)
+	1. [Zippopotamus API](#zippopotamus-api)
+	2. [Overpass API](#overpass-api)
 5. [Scraping](#scraping)
 	1. [Concurrency](#concurrency)
+6. [Writer](#writer)
 
 
 ## Overview
@@ -145,10 +188,77 @@ TUI interface is inside the ui package, the 'scraper' that handles HTTP requests
 ## Terminal Interface
 The TUI is built using the Bubbletea library, which provides a simple and effective way to create terminal user interfaces in Go, and styled with the Lipgloss addition to Bubbletea. The interface allows users to input a ZIP code, select a radius for scraping, and view the results in a structured format. The UI is designed to be intuitive and responsive, and will eventually be able to provide real time feedback as the scraper processes each website.
 
-## Geo
-The 'Geo' package is responsible for the handling of gepgraphic data, such as ZIP codes and their associated locations. The current idea is to use the 
+## Geo (Locator)
+The 'Geo' package is responsible for the handling of geographic data, such as ZIP codes and their associated locations. The current idea is to use the [Zippopotamus API](https://docs.zippopotam.us/) to fetch location data based on ZIP codes. 
+This package should provide functionality to fetch geographic coordinates (latitude and longitude). 
 
-## Scraping
+From here, we can use these coordinates to locate nearby businesses via the [Overpass API](https://wiki.openstreetmap.org/wiki/Overpass_API). If this fails, we can pivot to either the Google Maps API or perhaps Yelp, but these will require 1.) API keys and 2.) money.
+
+Once we have the coordinates from Zippopotamus, we can use the Overpass API to query OpenStreetMap for nearby businesses. We should then be able to throw the results into a 'geo-results' json file and throw the results into the 'web' package to be scraped.
+### Zippopotamus API
+While there is not an official Go client for the Zippopotamus API, it is a simple REST API that we can interact with using 'net/http'. This implementation can look the following example in the codebase:
+\`\`\`go
+func GetCoordinatesFromZip(zip string) (float64, float64, error) {
+	url := fmt.Sprintf("https://api.zippopotam.us/us/%s", zip)
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, 0, fmt.Errorf("HTTP request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, 0, fmt.Errorf("reading response failed: %w", err)
+	}
+
+	var data ZippoResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		return 0, 0, fmt.Errorf("JSON unmarshal failed: %w", err)
+	}
+
+	if len(data.Places) == 0 {
+		return 0, 0, fmt.Errorf("no places found for zip %s", zip)
+	}
+
+	place := data.Places[0]
+	lat, err1 := strconv.ParseFloat(place.Latitude, 64)
+	lon, err2 := strconv.ParseFloat(place.Longitude, 64)
+	if err1 != nil || err2 != nil {
+		return 0, 0, fmt.Errorf("invalid coordinates in API response")
+	}
+
+	return lat, lon, nil
+}
+\`\`\`
+
+While this function is perhaps one of the most significant in this project, it is also quite simple. All we are doing is making a GET request to the Zippo API, reading the response, and unmarshalling the JSON into a struct. 
+
+We know that our JSON will look similar to this:
+
+\`\`\`json
+{
+  "post code": "90210",
+  "country": "United States",
+  "country abbreviation": "US",
+  "places": [
+    {
+      "place name": "Beverly Hills",
+      "state": "California",
+      "state abbreviation": "CA",
+      "latitude": "34.0901",
+      "longitude": "-118.4065"
+    }
+  ]
+}
+\`\`\`
+
+Working off of this, we check the validity of the response, and then extract / convert coordinates and return them if they are valid.
+
+
+### Overpass API
+
+
+## Web (Scraping)
 The scraping functionality is implemented using Go's 'net/http' package to make HTTP requests and 'goquery' for parsing HTML. The scraper first locates all pages attached to a zipcode via our Geo Package, then parses every page within the radius. We are then parsing the HTML to find links that match common job listing patterns, such as "careers", "jobs", or "employment".
 ### Concurrency
 The scraper uses Go's goroutines to handle multiple HTTP requests concurrently, significantly speeding up the scraping process. Each request is handled in a separate goroutine, allowing the application to scrape multiple websites simultaneously without blocking the main thread.
