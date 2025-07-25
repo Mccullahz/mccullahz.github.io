@@ -256,10 +256,37 @@ Working off of this, we check the validity of the response, and then extract / c
 
 
 ### Overpass API
+For the Overpass API, there is a Go client available, [go-overpass], however I am opting to use the 'net/http' package directly for simplicity. The Overpass API allows us to query OpenStreetMap data, which we can use to find businesses near the coordinates we obtained from the Zippopotamus API.
 
+The current implementation uses a simple HTTP GET request to the Overpass API with a query that searches for nodes tagged as "amenity". For the purpose of this project we are looking for all business types within a certain radius, so my query looks like this:
+\`\`\`go
+	query := fmt.Sprintf("[out:json];node(around:%d,%f,%f)[amenity];out;", radius, lat, lon)
+\`\`\`
+
+This query will return all nodes (which are businesses in this case) within the specified radius of the given latitude and longitude. The results are then sent into a 'geo-results' JSON file, which is then used by the scraper to find job pages. Currently, this functionality is very very rough, and it simlpy returning JSON that looks like this:
+\`\`\`json
+{
+  "type": "node",
+  "id": 12879790217,
+  "lat": 39.2332032,
+  "lon": -84.2498673
+  "tags": {
+	"power": "terminal"
+  }
+}
+
+  ]
+}
+\`\`\`
+
+From this JSON, we have the lat and lgn of the business, and the ID of the node. Though not particularly helpful on it's own, this is enough to pass into the scaper, which will then use the ID to find the business website and then search for a job / career page.
 
 ## Web (Scraping)
 The scraping functionality is implemented using Go's 'net/http' package to make HTTP requests and 'goquery' for parsing HTML. The scraper first locates all pages attached to a zipcode via our Geo Package, then parses every page within the radius. We are then parsing the HTML to find links that match common job listing patterns, such as "careers", "jobs", or "employment".
+### Identifiers
+How do we identify business information, even something as simple as whether they have a website or not? 
+
+
 ### Concurrency
 The scraper uses Go's goroutines to handle multiple HTTP requests concurrently, significantly speeding up the scraping process. Each request is handled in a separate goroutine, allowing the application to scrape multiple websites simultaneously without blocking the main thread.
 
