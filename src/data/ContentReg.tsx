@@ -171,7 +171,6 @@ Zylar McCullah
 	1. [Zippopotamus API](#zippopotamus-api)
 	2. [Overpass API](#overpass-api)
 5. [Scraping](#scraping)
-	1. [Concurrency](#concurrency)
 6. [Writer](#writer)
 
 
@@ -187,6 +186,10 @@ TUI interface is inside the ui package, the 'scraper' that handles HTTP requests
 
 ## Terminal Interface
 The TUI is built using the Bubbletea library, which provides a simple and effective way to create terminal user interfaces in Go, and styled with the Lipgloss addition to Bubbletea. The interface allows users to input a ZIP code, select a radius for scraping, and view the results in a structured format. The UI is designed to be intuitive and responsive, and will eventually be able to provide real time feedback as the scraper processes each website.
+
+As the backend for this project has been built out, the UI has had room to grow as well. The current implementation has just been modularized to separate the different views and components of the TUI. Packages for the UI have been split up several ways, and now our 'ui.go' file simply serves as the entry point for the TUI, and then calls the appropriate view based on the current state of the application. Modularizing the UI has proven to be quite beneficial, as it allows for easier maintenance and updates to the UI without affecting the core logic of the application. No more breaking everything when I want to change a color!
+
+While the UI is the "easier" portion of this project, it has become quite a headache to get everything working together properly, and still has plenty of work to be done. I am currently working on adjusting the results view to be more dynamic, such that it will allow for the user to scroll through the results and ultimately select a set of results to add to an apply to list. This will allow the user to easily keep track of which jobs they have applied to, and which ones they still need to apply to.
 
 ## Geo (Locator)
 The 'Geo' package is responsible for the handling of geographic data, such as ZIP codes and their associated locations. The current idea is to use the [Zippopotamus API](https://docs.zippopotam.us/) to fetch location data based on ZIP codes. 
@@ -284,12 +287,216 @@ From this JSON, we have the lat and lgn of the business, and the ID of the node.
 ## Web (Scraping)
 The scraping functionality is implemented using Go's 'net/http' package to make HTTP requests and 'goquery' for parsing HTML. The scraper first locates all pages attached to a zipcode via our Geo Package, then parses every page within the radius. We are then parsing the HTML to find links that match common job listing patterns, such as "careers", "jobs", or "employment".
 ### Identifiers
-How do we identify business information, even something as simple as whether they have a website or not? 
+Identifying dedicated job pages can be tricky, as different websites may use different structures and naming conventions. To address this, the scraper uses a set of predefined keywords and patterns to search for potential job listing pages, for example inside the 'web' package we have a list of keywords like this:
+\`\`\`go
+	var JobPageKeywords = []string{"careers", "jobs", "join-us", "employment", "opportunities", "work-with-us", "hiring"}
+
+func IsJobPage(url string, body string) bool {
+	urlLower := strings.ToLower(url)
+	for _, kw := range JobPageKeywords {
+		if strings.Contains(urlLower, kw) {
+			return true
+		}
+	}
+	bodyLower := strings.ToLower(body)
+	for _, kw := range JobPageKeywords {
+		if strings.Contains(bodyLower, kw) {
+			return true
+		}
+	}
+	return false
+}
+\`\`\`
+
+This function checks both the URL and the body of the page for any of the keywords, returning true if a match is found. This approach helps to catch a variety of naming conventions that businesses might use for their job listing pages.
+
+Using this method, the scraper can effectively identify potential job pages across a wide range of business websites, increasing the chances of finding relevant job listings for users. The issue with this method is that it can produce false positives, as some pages may contain these keywords without actually being job listing pages, or we can also miss job pages that do not use these keywords. To address this in the future, we could implement more advanced techniques such as ml or nlp to better understand the context of the page, but for now I am trying to do as much as I can without bringing in more dependencies.
+
+To perform the actual scraping, we use the 'net/http' package to make GET requests to each business website found by Geo. The response body is then parsed, looking for links that match the above identifiers. If a match is found, the URL is added to the results along with the business name.
+	\`\`\`go
+	func ScrapeWebsite(rootURL string) (string, error) {
+	// fetch url root and checks if responds 
+	resp, err := http.Get(rootURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch %s: %w", rootURL, err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read body: %w", err)
+	}
+	body := string(bodyBytes)
 
 
-### Concurrency
-The scraper uses Go's goroutines to handle multiple HTTP requests concurrently, significantly speeding up the scraping process. Each request is handled in a separate goroutine, allowing the application to scrape multiple websites simultaneously without blocking the main thread.
+	if IsJobPage(rootURL, body) {
+	// instead of returning immediately, record it as a candidate
+		candidate := rootURL
+		// parse HTML and scan links
+	    	pageLinks := extractLinks(body, rootURL)
+		for _, link := range pageLinks {
+			for _, kw := range JobPageKeywords {
+				if strings.Contains(strings.ToLower(link), kw) {
+					jobURL, ok := checkLink(link)
+					if ok {
+						return jobURL, nil // prefer deeper link
+					}
+				}
+			}
+		}
+    return candidate, nil // fallback: root really is the careers page OR no better link found but career keywords were present
+	}
 
+	// parse HTML and scan links
+	pageLinks := extractLinks(body, rootURL)
+	for _, link := range pageLinks {
+		// quick keyword check before fetching
+		for _, kw := range JobPageKeywords {
+			if strings.Contains(strings.ToLower(link), kw) {
+				// fetch link and confirm it’s a job page
+				jobURL, ok := checkLink(link)
+				if ok {
+					return jobURL, nil
+				}
+			}
+		}
+	}
+
+	return "", nil // nothing found
+}
+	\`\`\`
+
+This is quite a simple approach and could be improved to be both more robust and efficient, but for the current scope of the project, this works just fine.
+
+
+## Writer (IO)
+The writer package is responsible for handling input and output operations, specifically writing the results of the scraping process to a file. The results are stored in a structured format, making it easy to review and utilize the data later.
+
+The current implementation of the writer takes the results from Overpass and throws them into 'geo_results.json', and then feeds them into our scraper to check the returned business websites. The results from the scraper then gets thrown into 'results.json'. Both of these files are structured as JSON arrays, with each entry containing relevant information about the business and any job pages found.
+
+Here is an example of how the results are written to a JSON file:
+	\`\`\`go
+	// io for managing results files
+package utils
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"sort"
+	"os"
+	//"time"
+
+)
+
+// result struct to hold job page details
+type JobPageResult struct {
+	BusinessName string json:"business_name"
+	URL	   string json:"url"
+	Description string json:"description"
+}
+
+func LoadLatestResults(dir string) ([]JobPageResult, error) {
+	files, err := filepath.Glob(filepath.Join(dir, "results*.json"))
+	if err != nil || len(files) == 0 {
+		return nil,fmt.Errorf("no result files found")
+	}
+
+	sort.Slice(files, func(i, j int) bool {
+		return files[i] > files[j]
+	})
+
+	data, err := ioutil.ReadFile(files[0])
+	if err != nil {
+		return nil, err
+	}
+
+	var results []JobPageResult
+	if err := json.Unmarshal(data, &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func WriteResults(results []JobPageResult, outDir string) error {
+	// output directory exist? if not create it then write results to a file
+	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+		return fmt.Errorf("Failed to create output directory: %w", err)
+	}
+
+	filename := "results.json"
+	filepath := filepath.Join(outDir, filename)
+	file, err := os.Create(filepath)
+	if err != nil {
+		return fmt.Errorf("Failed to create results file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(results); err != nil {
+		return fmt.Errorf("Failed to write results to file: %w", err)
+	}
+
+	return nil
+
+} 
+
+//lets make this better, ensure we are writing the files similar to the results file above
+func WriteGeoResults(data []byte, outDir string) error {
+	// Ensure output directory exists
+	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	
+	}
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, data, "", "  "); err != nil {
+		return fmt.Errorf("failed to pretty-print Geo results: %w", err)
+	}
+
+	filename := "geo_results.json"
+	filePath := filepath.Join(outDir, filename)
+	
+	file, err := os.Create(filePath) // os.Create overwrites existing file
+	if err != nil {
+		return fmt.Errorf("failed to create results file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+
+	if err := os.WriteFile(filePath, prettyJSON.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write Geo results to file: %w", err)
+	}
+
+	return nil
+}
+
+func DeleteOldestResults(dir string) error {
+	files, err := filepath.Glob(filepath.Join(dir, "results_*.json"))
+	if err != nil || len(files) == 0 {
+		return fmt.Errorf("no result files found")
+	}
+
+	// sort files by name in ascending order
+	sort.Slice(files, func(i, j int) bool {
+		return files[i] < files[j]
+	})
+	// keep only the newest file
+	if len(files) > 1 {
+
+	}
+		return nil
+}
+\'\'\'
+
+This is currently how we are hadnling IO, and it works very well. This will be expanded in the future to include more details on the results, such as timestamps and job descriptions, but for now this is sufficient.
 
 
 `,
