@@ -133,24 +133,27 @@ Email: zylardmccullah@gmail.com,
 Phone: (937)-205-2799,
 Website: https://zylarmccullah.tech
 
-[DATE]
+[date]
 
-[COMPANY]
+[company]
 
 Dear Hiring Manager(s),
 
-I am very interested in the [JOB TITLE] position as advertised on [BOARD]. With a strong foundation in backend development, systems programming, and automation as well as hands on experience building full-stack projects using [REL TECH], I am excited by the opportunity to contribute to a team focused on innovation and excellence.
+I am very interested in the [Job Title] position, as advertised on [Job Board/Company Site]. With a strong foundation in backend development, systems programming, and automation as well as hands on experience building full-stack projects using Go, Python, Java, Typescript, and React, I am excited by the opportunity to contribute to a team focused on innovation and excellence.
 
-In my most recent role at Firewatch Design Studio, I led the development of a computer vision application using Python primarily within the Panda3D rendering library. Here I also collaborated cross functionally with the C-Suite to deliver production grade features for real time animation. Prior to that, I supported enterprise grade environments at Forward Edge Inc., managing thousands of user devices and accounts, and building internal tools like FTP servers and VPN systems to streamline IT workflows.
+In my current role at Firewatch Design Studio, I have led the development of a computer vision application using Python primarily within the Panda3D rendering library. Here I have also collaborated cross functionally with the C-Suite to deliver production grade features for real time animation.
+
+Prior to this role, I debugged and maintained Linux based servers used in cloud computing at Jabil Inc, boasting the highest debug accuracy and throughput amongst the entire debugging department.
+
+Additionally in the IT world, I supported enterprise grade environments at Forward Edge Inc., managing thousands of user devices and accounts, and building internal tools like FTP servers and VPN systems to streamline IT workflows. In this role, I was a top performer in both survey results, and SLA timelines, maintaining a 100% satisfaction rate with being within 95% of the SLA’s.
 
 Beyond work, I’ve built several projects for my university courses in Java / C++ / Go, finding a love for building with Go / Python + Typescript / React. I bring a practical mindset, a bias toward clean and scalable architecture, and an enthusiasm for system level thinking.
-I’m confident my experience with a variety of technologies, from development / scripting to containerization and DevOps (CI/CD, Docker), aligns with the challenges and goals of [COMPANY]. I’m excited to grow alongside a collaborative and technically curious team.
+
+I’m confident my experience with a variety of technologies, from development / scripting to containerization and DevOps (CI/CD, Docker), aligns with the challenges and goals of [Company Name].
+
 Thank you for considering my application, if there is anything at all that I can provide to further this evaluation do not hesitate to reach out!
-
 Sincerely,
-
 Zylar McCullah
-
     `,
   },
   {
@@ -542,7 +545,7 @@ The component strucure in this project includes:
 - **Skills**: A component that lists my skills and technologies I am proficient in, providing a quick overview of my technical capabilities.
 
 ## Home
-The home page of my portfolio site is designed to read similar to a resume, providing an uber quick overview of experience skills and education. It is structured to give visitors a quick snapshot of my professional background and capabilities, with links to more detailed sections for those interested in learning more.
+The home page (hero) of my portfolio site is designed to read similar to a resume, providing an uber quick overview of experience skills and education. It is structured to give visitors a quick snapshot of my professional background and capabilities, with links to more detailed sections for those interested in learning more.
 
 This page is quite simple, and simply serves the main components in a single page format:
 \`\`\`tsx
@@ -558,22 +561,20 @@ This page is quite simple, and simply serves the main components in a single pag
 Realistically, this page works just fine as is, however I do intend to add a couple of features in the future.
 The current idea that I have in mind is to add a layer of interactivity to the experience section, such that this will be less of a simple list, and rather appear as more of a timeline. This should allow for hovering over each position to reveal more information and then make some changes to a timeline undeneath the cards to show the duration of each position.
 
+Ideally, this page will be relagated to a secondary page, and the main landing page will be the three.js portfolio page, but for now this works just fine, it is just not as flashy as I am moving towards. Through netlify, I have plenty of room to have this page as a fallback in case the three.js page is too heavy for some devices, or a user simply prefers a more traditional portfolio experience.
 
 ## Portfolio
-The portfolio page is designed to showcase my projects. There are two versions of this page, one for the CLI based portfolio and one for the web based portfolio. The CLI based portfolio is designed to appear like a terminal, while the web based portfolio is designed to look like a modern web app.
+The portfolio page is designed to showcase my projects. There are two versions of this page, one for the CLI based portfolio and one for the web based portfolio. The CLI based portfolio is designed to appear like a terminal and is on it's way out, while the web based portfolio is designed as a Three.js powered 3D experience and is the future of this site.
 ### CLI Portfolio
 
 ### GUI Portfolio
-The GUI portfolio is designed to provide a more traditional web experience, with a focus on visual appeal and user interaction. It features a grid layout that displays my projects in a visually appealing manner, with each project represented by a card that includes a title, description, technologies used, and links to the project repository and a gif demo.
+The GUI portfolio is powered via Three.js. Currently this page is not public, but this is very likely to be the landing page as well as the main content page. By using Three.js, and preloading a scene, I can create a more immersive experience for visitors to my portfolio.
 
-I am currently working on a more advanced way to display my projects, with a focus on making it more interactive and engaging. The goal is to provide a more immersive experience for visitors, allowing them to explore my projects in greater detail and see the technologies I used in action. Currently we are using a simple card layout where each card represents a project and flips to reveal more information when hovered and redirects to the project page when clicked.
-
-To change this, I am considering using a more dynamic setup, where this is more of a 3D rendering of my projects, with each project represented by a 3D card that can be rotated and interacted with. To do this, I am looking into using Three.js, and preloading a scene. I am thinking maybe doing something like a 3D coffee table, where each project is represented by a coffee mug, and the user can rotate the table to view different projects. This would allow for a more interactive experience, and would also allow me to showcase my abilities in 3D rendering and animation.
-
+The idea is to have a 3D scene that represents a coffeespace, with various mugs representing different projects. Visitors can navigate the scene and interact with the objects to learn more about each project.
 So with this in mind, let's get to work and see what we can knock out.
 
 #### Animation
-The animation for this page is likely going to be the most complex part of this project, so I am going to use Three.js to simplify this process. WIth react-three-fiber, we can easily integrate Three.js into our React application, allowing us to create 3D scenes and animations with *relative* ease.
+The animation for this page is likely going to be the most complex part of this project, so I am going to use Three.js to simplify this process. With react-three-fiber, we can easily integrate Three.js into our React application, allowing us to create 3D scenes and animations with *relative* ease.
 
 To start, we will need to install the necessary dependencies:
 \`\`\`bash
@@ -660,8 +661,7 @@ To differentiate between projects, my idea is to add tickets to the mugs, which 
 
 To do this, we can create a new object that contains project information. For this purpose, I am going to go with a 'ticket' onject becasue it is fitting and should allow us to do what we need here.
 
-The current issue with the ticket object, adn will likely also be an issue with the mugs, is that their rotation is set once, and though this may be correct for 2 positions, is is going to be incorrect for the perpendicular sides of the tables. To address this, we can use the 'useFrame' hook from 'react-three-fiber' to update the rotation of the mugs and tickets based on their position on the table. I have never used this hook before, so let's see how we can implement it.
-
+### 
 
     `
   },
