@@ -518,7 +518,7 @@ To see the current state of the tests, you can easily track this in the github r
     subtitle: "My ever-evolving web portfolio.",
     technologies: ["TypeScript", "React"],
     links: {
-      github: "https://www.github.com/Mccullahz/portfolio",
+      github: "https://www.github.com/Mccullahz/web-v2",
       demo: "https://zylarmccullah.tech",
     },
     content: `
