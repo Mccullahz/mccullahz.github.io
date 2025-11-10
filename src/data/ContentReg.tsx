@@ -159,11 +159,11 @@ Zylar McCullah
   {
     type: "project",
     slug: "job-scraper-cli",
-    title: "Job Scraper CLI",
+    title: "Go-Getta-Job",
     subtitle: "Scrapes business websites near a ZIP code for job pages.",
     technologies: ["Go", "Bubbletea", "Lipgloss"],
     links: {
-      github: "PRIVATEhttps://github.com/Mccullahz/cli-scraper",
+      github: "https://github.com/Mccullahz/go-getta-job",
     },
     content: `
 # Table of contents
@@ -174,7 +174,8 @@ Zylar McCullah
 	1. [Zippopotamus API](#zippopotamus-api)
 	2. [Overpass API](#overpass-api)
 5. [Scraping](#scraping)
-6. [Writer](#writer)
+6. [DB + Writers](#writer)
+7. [Testing Suite](#testing)
 
 
 ## Overview
@@ -372,12 +373,12 @@ To perform the actual scraping, we use the 'net/http' package to make GET reques
 This is quite a simple approach and could be improved to be both more robust and efficient, but for the current scope of the project, this works just fine.
 
 
-## Writer (IO)
-The writer package is responsible for handling input and output operations, specifically writing the results of the scraping process to a file. The results are stored in a structured format, making it easy to review and utilize the data later.
+## Writer (DB IO)
+The writer package is responsible for handling input and output operations, specifically writing the results of the scraping process to the MongoDB in the form of JSON. The results are stored in a structured format, making it easy to review and utilize the data later.
 
-The current implementation of the writer takes the results from Overpass and throws them into 'geo_results.json', and then feeds them into our scraper to check the returned business websites. The results from the scraper then gets thrown into 'results.json'. Both of these files are structured as JSON arrays, with each entry containing relevant information about the business and any job pages found.
+The current implementation of the writer takes the results from Overpass and throws them into 'results.json' inside the Mongo container. This is inside 'job_search_db>job_results', and then feeds them into our scraper to check the returned business websites. The results from the scraper then gets thrown into 'job_search_db>jobs'. Both of these files are structured as JSON arrays, with each entry containing relevant information about the business and any job pages found.
 
-Here is an example of how the results are written to a JSON file:
+Here is an example of how the results are written to a JSON file, and has since been built out further to better suit MongoDB storage:
 	\`\`\`go
 	// io for managing results files
 package utils
@@ -499,7 +500,12 @@ func DeleteOldestResults(dir string) error {
 }
 \'\'\'
 
-This is currently how we are hadnling IO, and it works very well. This will be expanded in the future to include more details on the results, such as timestamps and job descriptions, but for now this is sufficient.
+As this project has grown we still rely on our base IO to read and write results, but the method has become more sophistocated. Realistically this approach is works, but has been modified slightly since writing this initial version.
+
+## Testing Suite
+The testing suite for this project is built using Go's built-in testing framework. Each package has its own set of tests to ensure the functionality is working as expected. Test coverage for this project is currently around 70%, with plans to increase this as more features are added, however this is currently a massive pain point to get right for the CI/CD pipeline. I am constantly running into issues with coverage reporting, so for now I am focusing on getting the core functionality tested properly before worrying about coverage metrics.
+
+To see the current state of the tests, you can easily track this in the github repo, or manually run tests with one of the many make commands provided in the Makefile @[https://github.com/Mccullahz/go-getta-job/blob/main/Makefile]
 
 
 `,
