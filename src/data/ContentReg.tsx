@@ -166,16 +166,18 @@ Zylar McCullah
       github: "https://github.com/Mccullahz/go-getta-job",
     },
     content: `
+
 # Table of contents
 1. [Overview](#overview)
 2. [Structure](#structure)
 3. [Terminal Interface](#TUI)
 4. [Geo](#geo)
-	1. [Zippopotamus API](#zippopotamus-api)
-	2. [Overpass API](#overpass-api)
+  1. [Zippopotamus API](#zippopotamus-api)
+  2. [Overpass API](#overpass-api)
 5. [Scraping](#scraping)
 6. [DB + Writers](#writer)
-7. [Testing Suite](#testing)
+7. [Authentication & User Accounts](#authentication)
+8. [Testing Suite](#testing)
 
 
 ## Overview
@@ -195,6 +197,8 @@ As the backend for this project has been built out, the UI has had room to grow 
 
 While the UI is the "easier" portion of this project, it has become quite a headache to get everything working together properly, and still has plenty of work to be done. I am currently working on adjusting the results view to be more dynamic, such that it will allow for the user to scroll through the results and ultimately select a set of results to add to an apply to list. This will allow the user to easily keep track of which jobs they have applied to, and which ones they still need to apply to.
 
+The TUI now includes an account management interface accessible from the Settings menu. Users can register new accounts or log into existing ones directly from the terminal interface. The account page supports both login and registration modes, with intuitive field navigation using arrow keys and TAB to switch between modes.
+
 ## Geo (Locator)
 The 'Geo' package is responsible for the handling of geographic data, such as ZIP codes and their associated locations. The current idea is to use the [Zippopotamus API](https://docs.zippopotam.us/) to fetch location data based on ZIP codes. 
 This package should provide functionality to fetch geographic coordinates (latitude and longitude). 
@@ -206,35 +210,35 @@ Once we have the coordinates from Zippopotamus, we can use the Overpass API to q
 While there is not an official Go client for the Zippopotamus API, it is a simple REST API that we can interact with using 'net/http'. This implementation can look the following example in the codebase:
 \`\`\`go
 func GetCoordinatesFromZip(zip string) (float64, float64, error) {
-	url := fmt.Sprintf("https://api.zippopotam.us/us/%s", zip)
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0, 0, fmt.Errorf("HTTP request failed: %w", err)
-	}
-	defer resp.Body.Close()
+  url := fmt.Sprintf("https://api.zippopotam.us/us/%s", zip)
+  resp, err := http.Get(url)
+  if err != nil {
+    return 0, 0, fmt.Errorf("HTTP request failed: %w", err)
+  }
+  defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, 0, fmt.Errorf("reading response failed: %w", err)
-	}
+  body, err := io.ReadAll(resp.Body)
+  if err != nil {
+    return 0, 0, fmt.Errorf("reading response failed: %w", err)
+  }
 
-	var data ZippoResponse
-	if err := json.Unmarshal(body, &data); err != nil {
-		return 0, 0, fmt.Errorf("JSON unmarshal failed: %w", err)
-	}
+  var data ZippoResponse
+  if err := json.Unmarshal(body, &data); err != nil {
+    return 0, 0, fmt.Errorf("JSON unmarshal failed: %w", err)
+  }
 
-	if len(data.Places) == 0 {
-		return 0, 0, fmt.Errorf("no places found for zip %s", zip)
-	}
+  if len(data.Places) == 0 {
+    return 0, 0, fmt.Errorf("no places found for zip %s", zip)
+  }
 
-	place := data.Places[0]
-	lat, err1 := strconv.ParseFloat(place.Latitude, 64)
-	lon, err2 := strconv.ParseFloat(place.Longitude, 64)
-	if err1 != nil || err2 != nil {
-		return 0, 0, fmt.Errorf("invalid coordinates in API response")
-	}
+  place := data.Places[0]
+  lat, err1 := strconv.ParseFloat(place.Latitude, 64)
+  lon, err2 := strconv.ParseFloat(place.Longitude, 64)
+  if err1 != nil || err2 != nil {
+    return 0, 0, fmt.Errorf("invalid coordinates in API response")
+  }
 
-	return lat, lon, nil
+  return lat, lon, nil
 }
 \`\`\`
 
@@ -267,7 +271,7 @@ For the Overpass API, there is a Go client available, [go-overpass], however I a
 
 The current implementation uses a simple HTTP GET request to the Overpass API with a query that searches for nodes tagged as "amenity". For the purpose of this project we are looking for all business types within a certain radius, so my query looks like this:
 \`\`\`go
-	query := fmt.Sprintf("[out:json];node(around:%d,%f,%f)[amenity];out;", radius, lat, lon)
+  query := fmt.Sprintf("[out:json];node(around:%d,%f,%f)[amenity];out;", radius, lat, lon)
 \`\`\`
 
 This query will return all nodes (which are businesses in this case) within the specified radius of the given latitude and longitude. The results are then sent into a 'geo-results' JSON file, which is then used by the scraper to find job pages. Currently, this functionality is very very rough, and it simlpy returning JSON that looks like this:
@@ -278,7 +282,7 @@ This query will return all nodes (which are businesses in this case) within the 
   "lat": 39.2332032,
   "lon": -84.2498673
   "tags": {
-	"power": "terminal"
+  "power": "terminal"
   }
 }
 
@@ -288,27 +292,27 @@ This query will return all nodes (which are businesses in this case) within the 
 
 From this JSON, we have the lat and lgn of the business, and the ID of the node. Though not particularly helpful on it's own, this is enough to pass into the scaper, which will then use the ID to find the business website and then search for a job / career page.
 
-## Web (Scraping)
+## Scraping
 The scraping functionality is implemented using Go's 'net/http' package to make HTTP requests and 'goquery' for parsing HTML. The scraper first locates all pages attached to a zipcode via our Geo Package, then parses every page within the radius. We are then parsing the HTML to find links that match common job listing patterns, such as "careers", "jobs", or "employment".
 ### Identifiers
 Identifying dedicated job pages can be tricky, as different websites may use different structures and naming conventions. To address this, the scraper uses a set of predefined keywords and patterns to search for potential job listing pages, for example inside the 'web' package we have a list of keywords like this:
 \`\`\`go
-	var JobPageKeywords = []string{"careers", "jobs", "join-us", "employment", "opportunities", "work-with-us", "hiring"}
+  var JobPageKeywords = []string{"careers", "jobs", "join-us", "employment", "opportunities", "work-with-us", "hiring"}
 
 func IsJobPage(url string, body string) bool {
-	urlLower := strings.ToLower(url)
-	for _, kw := range JobPageKeywords {
-		if strings.Contains(urlLower, kw) {
-			return true
-		}
-	}
-	bodyLower := strings.ToLower(body)
-	for _, kw := range JobPageKeywords {
-		if strings.Contains(bodyLower, kw) {
-			return true
-		}
-	}
-	return false
+  urlLower := strings.ToLower(url)
+  for _, kw := range JobPageKeywords {
+    if strings.Contains(urlLower, kw) {
+      return true
+    }
+  }
+  bodyLower := strings.ToLower(body)
+  for _, kw := range JobPageKeywords {
+    if strings.Contains(bodyLower, kw) {
+      return true
+    }
+  }
+  return false
 }
 \`\`\`
 
@@ -317,58 +321,58 @@ This function checks both the URL and the body of the page for any of the keywor
 Using this method, the scraper can effectively identify potential job pages across a wide range of business websites, increasing the chances of finding relevant job listings for users. The issue with this method is that it can produce false positives, as some pages may contain these keywords without actually being job listing pages, or we can also miss job pages that do not use these keywords. To address this in the future, we could implement more advanced techniques such as ml or nlp to better understand the context of the page, but for now I am trying to do as much as I can without bringing in more dependencies.
 
 To perform the actual scraping, we use the 'net/http' package to make GET requests to each business website found by Geo. The response body is then parsed, looking for links that match the above identifiers. If a match is found, the URL is added to the results along with the business name.
-	\`\`\`go
-	func ScrapeWebsite(rootURL string) (string, error) {
-	// fetch url root and checks if responds 
-	resp, err := http.Get(rootURL)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch %s: %w", rootURL, err)
-	}
-	defer resp.Body.Close()
+  \`\`\`go
+  func ScrapeWebsite(rootURL string) (string, error) {
+  // fetch url root and checks if responds 
+  resp, err := http.Get(rootURL)
+  if err != nil {
+    return "", fmt.Errorf("failed to fetch %s: %w", rootURL, err)
+  }
+  defer resp.Body.Close()
 
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to read body: %w", err)
-	}
-	body := string(bodyBytes)
+  bodyBytes, err := io.ReadAll(resp.Body)
+  if err != nil {
+    return "", fmt.Errorf("failed to read body: %w", err)
+  }
+  body := string(bodyBytes)
 
 
-	if IsJobPage(rootURL, body) {
-	// instead of returning immediately, record it as a candidate
-		candidate := rootURL
-		// parse HTML and scan links
-	    	pageLinks := extractLinks(body, rootURL)
-		for _, link := range pageLinks {
-			for _, kw := range JobPageKeywords {
-				if strings.Contains(strings.ToLower(link), kw) {
-					jobURL, ok := checkLink(link)
-					if ok {
-						return jobURL, nil // prefer deeper link
-					}
-				}
-			}
-		}
+  if IsJobPage(rootURL, body) {
+  // instead of returning immediately, record it as a candidate
+    candidate := rootURL
+    // parse HTML and scan links
+        pageLinks := extractLinks(body, rootURL)
+    for _, link := range pageLinks {
+      for _, kw := range JobPageKeywords {
+        if strings.Contains(strings.ToLower(link), kw) {
+          jobURL, ok := checkLink(link)
+          if ok {
+            return jobURL, nil // prefer deeper link
+          }
+        }
+      }
+    }
     return candidate, nil // fallback: root really is the careers page OR no better link found but career keywords were present
-	}
+  }
 
-	// parse HTML and scan links
-	pageLinks := extractLinks(body, rootURL)
-	for _, link := range pageLinks {
-		// quick keyword check before fetching
-		for _, kw := range JobPageKeywords {
-			if strings.Contains(strings.ToLower(link), kw) {
-				// fetch link and confirm it’s a job page
-				jobURL, ok := checkLink(link)
-				if ok {
-					return jobURL, nil
-				}
-			}
-		}
-	}
+  // parse HTML and scan links
+  pageLinks := extractLinks(body, rootURL)
+  for _, link := range pageLinks {
+    // quick keyword check before fetching
+    for _, kw := range JobPageKeywords {
+      if strings.Contains(strings.ToLower(link), kw) {
+        // fetch link and confirm it's a job page
+        jobURL, ok := checkLink(link)
+        if ok {
+          return jobURL, nil
+        }
+      }
+    }
+  }
 
-	return "", nil // nothing found
+  return "", nil // nothing found
 }
-	\`\`\`
+  \`\`\`
 
 This is quite a simple approach and could be improved to be both more robust and efficient, but for the current scope of the project, this works just fine.
 
@@ -379,134 +383,210 @@ The writer package is responsible for handling input and output operations, spec
 The current implementation of the writer takes the results from Overpass and throws them into 'results.json' inside the Mongo container. This is inside 'job_search_db>job_results', and then feeds them into our scraper to check the returned business websites. The results from the scraper then gets thrown into 'job_search_db>jobs'. Both of these files are structured as JSON arrays, with each entry containing relevant information about the business and any job pages found.
 
 Here is an example of how the results are written to a JSON file, and has since been built out further to better suit MongoDB storage:
-	\`\`\`go
-	// io for managing results files
+  \`\`\`go
+  // io for managing results files
 package utils
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"sort"
-	"os"
-	//"time"
+  "bytes"
+  "encoding/json"
+  "fmt"
+  "io/ioutil"
+  "path/filepath"
+  "sort"
+  "os"
+  //"time"
 
 )
 
 // result struct to hold job page details
 type JobPageResult struct {
-	BusinessName string json:"business_name"
-	URL	   string json:"url"
-	Description string json:"description"
+  BusinessName string json:"business_name"
+  URL     string json:"url"
+  Description string json:"description"
 }
 
 func LoadLatestResults(dir string) ([]JobPageResult, error) {
-	files, err := filepath.Glob(filepath.Join(dir, "results*.json"))
-	if err != nil || len(files) == 0 {
-		return nil,fmt.Errorf("no result files found")
-	}
+  files, err := filepath.Glob(filepath.Join(dir, "results*.json"))
+  if err != nil || len(files) == 0 {
+    return nil,fmt.Errorf("no result files found")
+  }
 
-	sort.Slice(files, func(i, j int) bool {
-		return files[i] > files[j]
-	})
+  sort.Slice(files, func(i, j int) bool {
+    return files[i] > files[j]
+  })
 
-	data, err := ioutil.ReadFile(files[0])
-	if err != nil {
-		return nil, err
-	}
+  data, err := ioutil.ReadFile(files[0])
+  if err != nil {
+    return nil, err
+  }
 
-	var results []JobPageResult
-	if err := json.Unmarshal(data, &results); err != nil {
-		return nil, err
-	}
+  var results []JobPageResult
+  if err := json.Unmarshal(data, &results); err != nil {
+    return nil, err
+  }
 
-	return results, nil
+  return results, nil
 }
 
 func WriteResults(results []JobPageResult, outDir string) error {
-	// output directory exist? if not create it then write results to a file
-	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
-		return fmt.Errorf("Failed to create output directory: %w", err)
-	}
+  // output directory exist? if not create it then write results to a file
+  if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+    return fmt.Errorf("Failed to create output directory: %w", err)
+  }
 
-	filename := "results.json"
-	filepath := filepath.Join(outDir, filename)
-	file, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("Failed to create results file: %w", err)
-	}
-	defer file.Close()
+  filename := "results.json"
+  filepath := filepath.Join(outDir, filename)
+  file, err := os.Create(filepath)
+  if err != nil {
+    return fmt.Errorf("Failed to create results file: %w", err)
+  }
+  defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
+  encoder := json.NewEncoder(file)
+  encoder.SetIndent("", "  ")
 
-	if err := encoder.Encode(results); err != nil {
-		return fmt.Errorf("Failed to write results to file: %w", err)
-	}
+  if err := encoder.Encode(results); err != nil {
+    return fmt.Errorf("Failed to write results to file: %w", err)
+  }
 
-	return nil
+  return nil
 
 } 
 
 //lets make this better, ensure we are writing the files similar to the results file above
 func WriteGeoResults(data []byte, outDir string) error {
-	// Ensure output directory exists
-	if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
-		return fmt.Errorf("failed to create output directory: %w", err)
-	
-	}
-	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, data, "", "  "); err != nil {
-		return fmt.Errorf("failed to pretty-print Geo results: %w", err)
-	}
+  // Ensure output directory exists
+  if err := os.MkdirAll(outDir, os.ModePerm); err != nil {
+    return fmt.Errorf("failed to create output directory: %w", err)
+  
+  }
+  var prettyJSON bytes.Buffer
+  if err := json.Indent(&prettyJSON, data, "", "  "); err != nil {
+    return fmt.Errorf("failed to pretty-print Geo results: %w", err)
+  }
 
-	filename := "geo_results.json"
-	filePath := filepath.Join(outDir, filename)
-	
-	file, err := os.Create(filePath) // os.Create overwrites existing file
-	if err != nil {
-		return fmt.Errorf("failed to create results file: %w", err)
-	}
-	defer file.Close()
+  filename := "geo_results.json"
+  filePath := filepath.Join(outDir, filename)
+  
+  file, err := os.Create(filePath) // os.Create overwrites existing file
+  if err != nil {
+    return fmt.Errorf("failed to create results file: %w", err)
+  }
+  defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
+  encoder := json.NewEncoder(file)
+  encoder.SetIndent("", "  ")
 
 
-	if err := os.WriteFile(filePath, prettyJSON.Bytes(), 0644); err != nil {
-		return fmt.Errorf("failed to write Geo results to file: %w", err)
-	}
+  if err := os.WriteFile(filePath, prettyJSON.Bytes(), 0644); err != nil {
+    return fmt.Errorf("failed to write Geo results to file: %w", err)
+  }
 
-	return nil
+  return nil
 }
 
 func DeleteOldestResults(dir string) error {
-	files, err := filepath.Glob(filepath.Join(dir, "results_*.json"))
-	if err != nil || len(files) == 0 {
-		return fmt.Errorf("no result files found")
-	}
+  files, err := filepath.Glob(filepath.Join(dir, "results_*.json"))
+  if err != nil || len(files) == 0 {
+    return fmt.Errorf("no result files found")
+  }
 
-	// sort files by name in ascending order
-	sort.Slice(files, func(i, j int) bool {
-		return files[i] < files[j]
-	})
-	// keep only the newest file
-	if len(files) > 1 {
+  // sort files by name in ascending order
+  sort.Slice(files, func(i, j int) bool {
+    return files[i] < files[j]
+  })
+  // keep only the newest file
+  if len(files) > 1 {
 
-	}
-		return nil
+  }
+    return nil
 }
-\'\'\'
+\`\`\`
 
 As this project has grown we still rely on our base IO to read and write results, but the method has become more sophistocated. Realistically this approach is works, but has been modified slightly since writing this initial version.
+
+## Authentication & User Accounts
+The application now includes a complete user authentication system that allows users to register accounts and log in. This functionality is integrated into both the API server and the TUI interface, providing a seamless user experience.
+
+### Database Schema
+User accounts are stored in MongoDB within the 'users' collection. The user model is defined as follows:
+\`\`\`go
+type User struct {
+	ID           primitive.ObjectID 'bson:"_id,omitempty" json:"id"'
+	Username     string             'bson:"username" json:"username"'
+	Email        string             'bson:"email" json:"email"'
+	PasswordHash string             'bson:"password_hash" json:"password_hash"'
+	CreatedAt    time.Time          'bson:"created_at" json:"created_at"'
+}
+\`\`\`
+
+Passwords are hashed using bcrypt before being stored in the database, ensuring that plain-text passwords are never persisted. The 'UserRepository' in 'internal/database/repository.go' provides methods for creating users and retrieving them by username or ID, with built-in validation to prevent duplicate usernames or emails.
+
+### API Endpoints
+The authentication system exposes two main endpoints:
+
+**POST /api/register** - Register a new user account
+- Request body: '{"username": "user123", "email": "user@example.com", "password": "securepass"}'
+- Validates that username and email are unique
+- Requires password to be at least 6 characters
+- Returns user information (excluding password hash) on success
+
+**POST /api/login** - Authenticate an existing user
+- Request body: '{"username": "user123", "password": "securepass"}'
+- Verifies credentials using bcrypt password comparison
+- Returns user information on successful authentication
+
+Both endpoints follow a consistent response format:
+\`\`\`json
+{
+  "status": "ok",
+  "data": {
+    "id": "507f1f77bcf86cd799439011",
+    "username": "user123",
+    "email": "user@example.com",
+    "created_at": "2024-01-01T00:00:00Z"
+  }
+}
+\`\`\`
+
+Error responses include a descriptive message:
+\`\`\`json
+{
+  "status": "error",
+  "message": "Username already exists"
+}
+\`\`\`
+
+### TUI Integration
+The account management interface is accessible from the Settings menu in the TUI. The account page (internal/ui/states/account.go) provides a form-based interface for both login and registration.
+
+**Features:**
+- **Mode Switching**: Press TAB to toggle between login and register modes
+- **Field Navigation**: Use ↑/↓ arrow keys to move between form fields
+- **Password Masking**: Passwords are displayed as asterisks for security
+- **Async Operations**: Authentication requests are performed asynchronously with a loading spinner
+- **Error Handling**: Validation errors and API errors are displayed to the user
+- **Success Feedback**: Upon successful login/registration, the user is returned to the home screen and their account information is displayed
+
+The account state integrates with the existing TUI architecture, using the same message-passing pattern (AuthDoneMsg) as other async operations in the application. The API client ('internal/api/client.go') provides 'Register()' and 'Login()' methods that handle HTTP communication with the server.
+
+### Implementation Details
+The authentication handlers are located in 'internal/api/users.go' and follow the same patterns as other API handlers in the project. The UserHandler' struct manages user-related operations, with separate methods for registration and login that handle input validation, password hashing, and database operations.
+
+The system is designed to be extensible - future enhancements could include:
+- JWT token-based session management
+- Password reset functionality
+- Email verification
+- User profile management
+- Account deletion
+
+Currently, the authentication system provides a solid foundation for user management while maintaining the project's focus on simplicity and maintainability.
 
 ## Testing Suite
 The testing suite for this project is built using Go's built-in testing framework. Each package has its own set of tests to ensure the functionality is working as expected. Test coverage for this project is currently around 70%, with plans to increase this as more features are added, however this is currently a massive pain point to get right for the CI/CD pipeline. I am constantly running into issues with coverage reporting, so for now I am focusing on getting the core functionality tested properly before worrying about coverage metrics.
 
 To see the current state of the tests, you can easily track this in the github repo, or manually run tests with one of the many make commands provided in the Makefile @[https://github.com/Mccullahz/go-getta-job/blob/main/Makefile]
-
 
 `,
   },
