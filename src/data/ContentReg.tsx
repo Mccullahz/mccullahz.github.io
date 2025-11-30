@@ -188,7 +188,7 @@ By searching only these local businesses, applicants can find job opportunities 
 ## Structure
 This project is structured similar to a standard Go application, with the main logic in the 'cmd' directory. This main function only acts as the entry point of the project. The rest of the Go packages are placed inside the internal directory, and further split into packages to modulate each function. 
 
-TUI interface is inside the ui package, the 'scraper' that handles HTTP requests is located inside web, and so fourth.
+TUI interface is inside the ui package, the 'scraper' that handles HTTP requests is located inside web, and so forth.
 
 ## Terminal Interface
 The TUI is built using the Bubbletea library, which provides a simple and effective way to create terminal user interfaces in Go, and styled with the Lipgloss addition to Bubbletea. The interface allows users to input a ZIP code, select a radius for scraping, and view the results in a structured format. The UI is designed to be intuitive and responsive, and will eventually be able to provide real time feedback as the scraper processes each website.
